@@ -10,7 +10,7 @@ app = Flask(__name__)
 # ==========================================================
 # ⚙️ CONFIGURACIÓN (Rellena esto con tus datos de Meta)
 # ==========================================================
-TOKEN_META = "EAA1YD3XNCIwBQPWlGW2qWNrNwQMdUsVtyGQQ213yZALhN6PjL21spEY7CbMO9NzHLi7U0tQ2em4b6sXHR4YfSntRjZBKPHsZAkbCwCeE56PGEqMoOVhw0lqU9AeIuybCZByKujzjxwELQcYlYeireYJxnqY5mJrlQkkg4HrTXDPgptGYG3MsRDzwXhGF8DZCvPdUBSSKAv2KNR9JWWTvASDh7pYEFV4JDqw6P7C626EYZCg8lTpsiztEqrwBCVtNqOTltDJlUwl4M1vIBbOLGnu3JF"
+TOKEN_META = "EAA1YD3XNCIwBQOivmy0sh6DSLV7TEklnNTwbx18IsOJ413USWL0ZByPH6WjtKs54U7OO4CkWmXV17QPqYHnsxTheD7DSrbnUTvdTsgiNRBDKsm5OPJSIbNJsZAurAsBZBqgZCwY0DUuSEH86GtzHyLLfVjcXneKZCzUvyGsO0gRX0xMbjXHdRhFiwaQjQJpGYaWmQaH0FgQxSzD4R2C75Tm4f5X0ZCDxVvSweFe5zFRzxZAzEmqPCoOJa6lM4B69liBZCQMX7muafAxyWcCJz0NxRl4aeQZDZD"
 PHONE_ID = "839576705914181"
 VERIFY_TOKEN = "cobaep_secreto"  # Úsalo al configurar el Webhook en Meta
 
@@ -229,4 +229,5 @@ if __name__ == '__main__':
         os.makedirs('static')
     
     # Iniciar servidor
+
     app.run(port=5000, debug=True)
