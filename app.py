@@ -8,11 +8,11 @@ import xml.etree.ElementTree as ET
 app = Flask(__name__)
 
 # ==========================================================
-# ⚙️ CONFIGURACIÓN (Rellena esto con tus datos de Meta)
+# ⚙️ CONFIGURACIÓN (¡PEGA TUS DATOS AQUÍ!)
 # ==========================================================
 TOKEN_META = "EAA1YD3XNCIwBQOivmy0sh6DSLV7TEklnNTwbx18IsOJ413USWL0ZByPH6WjtKs54U7OO4CkWmXV17QPqYHnsxTheD7DSrbnUTvdTsgiNRBDKsm5OPJSIbNJsZAurAsBZBqgZCwY0DUuSEH86GtzHyLLfVjcXneKZCzUvyGsO0gRX0xMbjXHdRhFiwaQjQJpGYaWmQaH0FgQxSzD4R2C75Tm4f5X0ZCDxVvSweFe5zFRzxZAzEmqPCoOJa6lM4B69liBZCQMX7muafAxyWcCJz0NxRl4aeQZDZD"
 PHONE_ID = "839576705914181"
-VERIFY_TOKEN = "cobaep_secreto"  # Úsalo al configurar el Webhook en Meta
+VERIFY_TOKEN = "cobaep_secreto" 
 
 # ==========================================================
 # 🧠 MEMORIA TEMPORAL
@@ -30,7 +30,6 @@ def enviar_mensaje(telefono, texto):
     requests.post(url, headers=headers, json=data)
 
 def enviar_bienvenida(telefono):
-    """Envía las instrucciones iniciales y créditos."""
     mensaje = (
         "¡Bienvenido al buscador de boletas COBAEP! 🎓\n\n"
         "Para empezar, necesito saber tu matrícula para buscar tu boleta.\n\n"
@@ -90,21 +89,37 @@ def enviar_pdf(telefono, url_publica_pdf):
     requests.post(url, headers=headers, json=data)
 
 # ==========================================================
-# 🕵️ LÓGICA SOAP (Descarga de Boleta)
+# 🕵️ LÓGICA SOAP (CORREGIDA)
 # ==========================================================
 
 def descargar_boleta_soap(matricula, semestre):
     url = "http://www.cobaep.edu.mx/alumnos/ConsultaBoletaAndroid.asmx"
-    payload = f"""<?xml version="1.0" encoding="utf-8"?>
-    <v:Envelope xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:d="http://www.w3.org/2001/XMLSchema" xmlns:c="http://schemas.xmlsoap.org/soap/encoding/" xmlns:v="http://schemas.xmlsoap.org/soap/envelope/">
-        <v:Header /><v:Body><GetEnrollmentStudent xmlns="http://www.cobaep.edu.mx/alumnos/" id="o0" c:root="1">
-            <matricula i:type="d:string">{matricula}</matricula><grado i:type="d:int">{semestre}</grado>
-        </GetEnrollmentStudent></v:Body></v:Envelope>"""
     
-    headers = {'User-Agent': 'ksoap2-android/2.6.0+;version=3.6.4', 'SOAPAction': 'http://www.cobaep.edu.mx/alumnos/GetEnrollmentStudent', 'Content-Type': 'text/xml;charset=utf-8'}
+    # Payload idéntico al que funcionó en tu prueba local
+    payload = f"""<?xml version="1.0" encoding="utf-8"?>
+    <v:Envelope xmlns:i="http://www.w3.org/2001/XMLSchema-instance" 
+                xmlns:d="http://www.w3.org/2001/XMLSchema" 
+                xmlns:c="http://schemas.xmlsoap.org/soap/encoding/" 
+                xmlns:v="http://schemas.xmlsoap.org/soap/envelope/">
+        <v:Header />
+        <v:Body>
+            <GetEnrollmentStudent xmlns="http://www.cobaep.edu.mx/alumnos/" id="o0" c:root="1">
+                <matricula i:type="d:string">{matricula}</matricula>
+                <grado i:type="d:int">{semestre}</grado>
+            </GetEnrollmentStudent>
+        </v:Body>
+    </v:Envelope>"""
+    
+    headers = {
+        'User-Agent': 'ksoap2-android/2.6.0+;version=3.6.4',
+        'SOAPAction': 'http://www.cobaep.edu.mx/alumnos/GetEnrollmentStudent',
+        'Content-Type': 'text/xml;charset=utf-8'
+    }
     
     try:
         response = requests.post(url, headers=headers, data=payload)
+        
+        # Búsqueda robusta del Base64
         root = ET.fromstring(response.text)
         b64_string = ""
         for element in root.iter():
@@ -114,11 +129,20 @@ def descargar_boleta_soap(matricula, semestre):
         
         if b64_string:
             pdf_bytes = base64.b64decode(b64_string)
+            
+            # --- CORRECCIÓN IMPORTANTE: Asegurar que la carpeta static exista ---
+            if not os.path.exists('static'):
+                os.makedirs('static')
+            
+            # Nombre seguro para el archivo
             nombre_limpio = matricula.replace('/', '_')
             filename = f"static/boleta_{nombre_limpio}_sem{semestre}.pdf"
+            
             with open(filename, "wb") as f:
                 f.write(pdf_bytes)
+            
             return filename
+            
     except Exception as e:
         print(f"Error SOAP: {e}")
     return None
@@ -144,20 +168,18 @@ def recibir_mensaje():
             tel = msg['from']
             tipo = msg['type']
             
-            # 1. SI ES TEXTO
+            # 1. TEXTO (Matrícula o Saludo)
             if tipo == 'text':
                 texto = msg['text']['body'].strip()
                 
-                # --- EL PORTERO INTELIGENTE ---
-                # Si el texto tiene una diagonal "/" y es largo, ASUMIMOS QUE ES MATRÍCULA
+                # Si tiene diagonal y longitud suficiente, es matrícula
                 if "/" in texto and len(texto) > 6:
                     sesiones[tel] = {"matricula": texto}
                     enviar_lista_semestres(tel)
                 else:
-                    # Si no parece matrícula (ej: "Hola", "bot", "gracias"), mandamos bienvenida
                     enviar_bienvenida(tel)
             
-            # 2. SI ES SELECCIÓN DE BOTÓN/LISTA
+            # 2. INTERACTIVO (Semestre)
             elif tipo == 'interactive':
                 respuesta = msg['interactive']
                 semestre_id = ""
@@ -174,13 +196,14 @@ def recibir_mensaje():
                     ruta_pdf = descargar_boleta_soap(matricula, semestre_id)
                     
                     if ruta_pdf:
+                        # Generamos link público
                         url_pdf_publica = f"{request.scheme}://{request.host}/{ruta_pdf}"
                         enviar_pdf(tel, url_pdf_publica)
                         del sesiones[tel]
                     else:
-                        enviar_mensaje(tel, "❌ No se encontró boleta con esos datos. Verifica tu matrícula.")
+                        enviar_mensaje(tel, "❌ No se encontró la boleta. Verifica tus datos.")
                 else:
-                    enviar_bienvenida(tel) # Si falló la sesión, mandamos bienvenida de nuevo
+                    enviar_bienvenida(tel)
 
     except Exception:
         pass 
@@ -188,6 +211,7 @@ def recibir_mensaje():
     return jsonify({"status": "ok"})
 
 if __name__ == '__main__':
+    # Esto solo corre en tu PC, no en Render
     if not os.path.exists('static'):
         os.makedirs('static')
     app.run(host='0.0.0.0', port=10000)
