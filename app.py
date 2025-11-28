@@ -10,7 +10,7 @@ app = Flask(__name__)
 # ==========================================================
 # ⚙️ CONFIGURACIÓN (¡PEGA TUS DATOS AQUÍ!)
 # ==========================================================
-TOKEN_META = "EAA1YD3XNCIwBQOivmy0sh6DSLV7TEklnNTwbx18IsOJ413USWL0ZByPH6WjtKs54U7OO4CkWmXV17QPqYHnsxTheD7DSrbnUTvdTsgiNRBDKsm5OPJSIbNJsZAurAsBZBqgZCwY0DUuSEH86GtzHyLLfVjcXneKZCzUvyGsO0gRX0xMbjXHdRhFiwaQjQJpGYaWmQaH0FgQxSzD4R2C75Tm4f5X0ZCDxVvSweFe5zFRzxZAzEmqPCoOJa6lM4B69liBZCQMX7muafAxyWcCJz0NxRl4aeQZDZD"
+TOKEN_META = "EAA1YD3XNCIwBQOM3GKEeAVV21zLw48D90C8LOZB6QniSFdMdWtr3IbRvcTwJo3fLRmGyKyZA0dNrT62t2a2DKbyHKcS7EA2CyyWbf0SIBpUp39PUdRUgzphpPumM5VRFrn5HFHRZB9Q91A01lP0pTAqrnMXcAkr2eLMLQh3mvLapSn5DH6Qbeet72vZCfkJMUQvY2LVuUxyFfRsev1JTpo7d4fm2iODuDtEtKpZB3f812cpM1IxloZB2DR7e9fYWTQmz6o2TSMxdlNEu9IU76TAedAFAZDZD"
 PHONE_ID = "839576705914181"
 VERIFY_TOKEN = "cobaep_secreto" 
 
@@ -215,3 +215,4 @@ if __name__ == '__main__':
     if not os.path.exists('static'):
         os.makedirs('static')
     app.run(host='0.0.0.0', port=10000)
+
